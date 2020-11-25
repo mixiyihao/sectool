@@ -1,12 +1,12 @@
 package com.mixiyihao.security.tool.impl;
 
+;
 import com.mixiyihao.security.tool.SSRFProtect;
-import java.util.List;
 import sun.net.util.IPAddressUtil;
 
 import java.net.*;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -19,7 +19,8 @@ public class SSRFProtectImpl implements SSRFProtect {
     // 二级域名
     public static String RE_2TOP = "(\\w*\\.?){2}\\.(com.cn|net.cn|gov.cn|org\\.nz|org.cn|com|net|org|gov|cc|biz|info|cn|co)$";
     // 判断是否为IP
-    public static String RE_IP = "^((25[0-5]|2[0-4]\\\\d|1\\\\d{2}|[1-9]?\\\\d)\\\\.){3}(25[0-5]|2[0-4]\\\\d|1\\\\d{2}|[1-9]?\\\\d)$";
+    //public static String RE_IP = "^((25[0-5]|2[0-4]\\\\d|1\\\\d{2}|[1-9]?\\\\d)\\\\.){3}(25[0-5]|2[0-4]\\\\d|1\\\\d{2}|[1-9]?\\\\d)$";
+    public static String RE_IP_HOST = "^([1-9]|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])(\\.(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])){3}$";
     public static String RE_DOMAIN = "^(\\w+\\.)+\\w+$";
     /**
      *  判断是否安全的协议,允许http/https协议
@@ -35,7 +36,7 @@ public class SSRFProtectImpl implements SSRFProtect {
     }
 
     /**
-     通过官方api进行判断是LocalAddress
+      通过官方api进行判断是LocalAddress
      * @param host
      * @return
      */
@@ -61,8 +62,7 @@ public class SSRFProtectImpl implements SSRFProtect {
             String group = matcher.group(0);
             return group;
         }else{
-            boolean matches = host.matches(RE_IP);
-            if (matches){
+            if(isLegalIp(host)){
                 return host;
             }
             return null;
@@ -97,7 +97,7 @@ public class SSRFProtectImpl implements SSRFProtect {
                 for (InetAddress address:allByName) {
                     // System.out.println(address);
                     String hostAddress = address.getHostAddress();
-                    System.out.println(hostAddress);
+                    // System.out.println(hostAddress);
                     byte[] ip = address.getAddress();
                     if(isInternalIp(ip)) {
                         return false;
@@ -115,7 +115,7 @@ public class SSRFProtectImpl implements SSRFProtect {
      * @return
      */
     private boolean isLegalIp(String host){
-        Pattern pattern = Pattern.compile("^((25[0-5]|2[0-4]\\d|1\\d{2}|[1-9]?\\d)\\.){3}(25[0-5]|2[0-4]\\d|1\\d{2}|[1-9]?\\d)$");
+        Pattern pattern = Pattern.compile(RE_IP_HOST);
         Matcher matcher = pattern.matcher(host);
         return matcher.find();
     }
@@ -177,7 +177,7 @@ public class SSRFProtectImpl implements SSRFProtect {
         }
         // 确认已经关闭重定向
         if(!confirm302RedirectClose){
-            throw new IllegalStateException("confirm 302 redirect close error");
+            throw new IllegalStateException("请确定已经对302跳转进行限制了，否则有可能对302跳转绕过");
         }
         String host = uri.getHost();
         // 判断是否正常的协议
@@ -219,7 +219,7 @@ public class SSRFProtectImpl implements SSRFProtect {
         // 判断host是否为ip/域名
         return isLegalHost(uri.getHost());
 
-        // return false;
+       // return false;
     }
 
 
@@ -229,9 +229,13 @@ public class SSRFProtectImpl implements SSRFProtect {
             return true;
         }
         URI uri = URI.create(url);
-        if(!commanCheck(uri, confirm302RedirectClose)){
+        if(!confirm302RedirectClose){
             return false;
         }
+        // 白名单需要么检测是否厄内网？？？？
+//        if(!commanCheck(uri, confirm302RedirectClose)){
+//            return false;
+//        }
         // String host = uri.getHost();
         // 获取主域名
         String topDomainByHost = getTopDomainByHost(uri.getHost());
@@ -248,13 +252,25 @@ public class SSRFProtectImpl implements SSRFProtect {
 
 
     public static void main(String args[]) throws MalformedURLException {
+        SSRFProtect ssrf = new SSRFProtectImpl();
+        String p = "254.255.255.255";
+        String whiteList[] = {"172.16.1.1","saicmobility.com"};
+//        boolean safeByWhiteList = ssrf.isSafeByWhiteList(p, whiteList, true);
+//
+//        System.out.println(safeByWhiteList);
+        String RE_IP = "([1-9]|[1-9]\\\\d|1\\\\d{2}|2[0-4]\\\\d|25[0-5])(\\\\.(\\\\d|[1-9]\\\\d|1\\\\d{2}|2[0-4]\\\\d|25[0-5])){3}";
+        String ip = "^([1-9]|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])(\\.(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])){3}$";
+        Pattern pattern = Pattern.compile(ip);
+        Matcher matcher = pattern.matcher(p);
+        System.out.println(matcher.matches());
+       // System.out.println(p.matches(RE_IP));
 
-
+        /*
         // 攻击本地的方法
         String urls[] = {
                 "https://www.baidu.com.xip.io",
                 "http://soc.saicm.local/",
-                "https://www.baidu.com",
+                "https://www.saicmobility.com",
                 "https://10.0.0.1.xip.io:443",
                 "http://2130706433/",
                 "http://012.012.0.1:443",
@@ -270,9 +286,8 @@ public class SSRFProtectImpl implements SSRFProtect {
 
 
         // 利用 @ 方法
-        ;
         // 利用短地址
-        // String shortLocalUrl = "http://dwz.cn/11SMa";
+       // String shortLocalUrl = "http://dwz.cn/11SMa";
         // 利用特殊域名
         String especailUrl1 = "";
         String especailUrl2 = "";
@@ -281,12 +296,13 @@ public class SSRFProtectImpl implements SSRFProtect {
         // 利用十六进制
         String hexUrl = "http://2130706433/";
         String especailUrl4= "https://10.0.0.1.xip.io:443";
-        String normalUrl = "https://www.baidu.com";
+        String normalUrl = "https://www.saicmobility.com";
 
         // 利用Enclosed alphanumerics
         SSRFProtect ssrf = new SSRFProtectImpl();
         ArrayList <String> whiteList = new ArrayList();
         whiteList.add("www.baidu.com");
+
         for(int i=0;i<urls.length;i++){
             String url = urls[i];
             // url = "http://012.012.0.1:443";
@@ -294,8 +310,7 @@ public class SSRFProtectImpl implements SSRFProtect {
             System.out.println(url+ "---------------------"+ safeByPrivateNetwork);
 
         }
-
+    */
 
     }
 }
-
