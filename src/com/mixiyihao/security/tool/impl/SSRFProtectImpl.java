@@ -254,7 +254,9 @@ public class SSRFProtectImpl implements SSRFProtect {
     public static void main(String args[]) throws MalformedURLException {
         SSRFProtect ssrf = new SSRFProtectImpl();
         String p = "254.255.255.255";
-        String whiteList[] = {"172.16.1.1","saicmobility.com"};
+        String username = "chenpeng"
+        String password = "123456!@123";
+        String whiteList[] = {"172.16.1.1","xhs.com"};
 //        boolean safeByWhiteList = ssrf.isSafeByWhiteList(p, whiteList, true);
 //
 //        System.out.println(safeByWhiteList);
@@ -270,7 +272,7 @@ public class SSRFProtectImpl implements SSRFProtect {
         String urls[] = {
                 "https://www.baidu.com.xip.io",
                 "http://soc.saicm.local/",
-                "https://www.saicmobility.com",
+                "https://api.xhs.com",
                 "https://10.0.0.1.xip.io:443",
                 "http://2130706433/",
                 "http://012.012.0.1:443",
@@ -296,7 +298,7 @@ public class SSRFProtectImpl implements SSRFProtect {
         // 利用十六进制
         String hexUrl = "http://2130706433/";
         String especailUrl4= "https://10.0.0.1.xip.io:443";
-        String normalUrl = "https://www.saicmobility.com";
+        String normalUrl = "https://api.xhs.com";
 
         // 利用Enclosed alphanumerics
         SSRFProtect ssrf = new SSRFProtectImpl();
